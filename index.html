@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#faf7f2">
+<meta name="mobile-web-app-capable" content="yes">
+<title>오늘의 식사</title>
+<style>
+:root{--bg:#faf7f2;--card:#fff;--ink:#2b2b2b;--sub:#8a8580;--accent:#e2643b;--red:#d9443a;--yellow:#e9a23b;--green:#4a9d63;--blue:#3d7fc4;--brown:#a5612a;--line:#f0ece6}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard","Noto Sans KR","Samsung Sans",system-ui,sans-serif;font-size:15px}
+header{padding:calc(14px + env(safe-area-inset-top)) 16px 4px;max-width:640px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end}
+h1{margin:0;font-size:21px}
+.date{color:var(--sub);font-size:13px}
+main{padding:0 14px calc(96px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+section{display:none}section.on{display:block}
+
+/* 하단 메뉴 */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;background:#fff;border-top:1px solid #ebe6df;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+nav button{flex:1;border:none;background:none;font-family:inherit;font-size:11px;color:var(--sub);padding:4px 0;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:52px}
+nav button span{font-size:22px;line-height:1}
+nav button.on{color:var(--accent);font-weight:700}
+
+/* 공통 */
+.card{background:var(--card);border-radius:16px;padding:14px;margin:10px 0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card p{margin:6px 0}
+.btn{display:block;width:100%;min-height:48px;padding:12px;margin-top:10px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-size:16px;font-weight:600;font-family:inherit}
+.btn.gray{background:#e9e4dd;color:var(--ink)}
+.btn.light{background:#f3efe9;color:var(--accent)}
+.btn.rec,.x.rec{background:var(--red)!important;color:#fff!important}
+.row{display:flex;gap:8px;align-items:center}.row .btn{flex:1}.row input{flex:1}
+.row .x{margin-top:8px;min-width:48px;min-height:48px;font-size:18px}
+.duo{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;margin:10px 0}
+.duo .btn{margin:0}
+.x{border:none;background:#f3efe9;border-radius:10px;color:var(--ink);font-size:13px;padding:8px 11px;min-height:36px;font-family:inherit}
+.x.on{background:var(--ink);color:#fff}
+.x.minus{background:var(--accent);color:#fff;font-weight:700;min-width:40px}
+.x.cam{background:#e8f0fa;color:var(--blue);font-weight:600}
+.x.trash{background:#f7e6df;color:var(--brown);font-weight:600}
+.acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
+textarea,input[type=password],input[type=text]{width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;font-size:16px;font-family:inherit;margin-top:8px;background:#fff;color:var(--ink)}
+input[type=number]{width:84px;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:16px}
+input[type=file]{margin-top:8px;width:100%;font-size:14px}
+select,.dateIn{border:1px solid #ddd;border-radius:10px;padding:7px;font-size:14px;background:#fff;font-family:inherit;color:var(--ink);min-height:36px}
+.chips{display:flex;gap:6px;margin-top:8px;overflow-x:auto;padding-bottom:2px}
+.chips button{flex:none;border:1px solid #ddd;background:#fff;border-radius:20px;padding:8px 13px;font-size:14px;color:var(--ink);font-family:inherit}
+.chips button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.item{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border:none}
+.badge{min-width:52px;text-align:center;font-size:13px;padding:4px 6px;border-radius:8px;color:#fff;font-weight:700;margin-top:2px}
+.name{flex:1;min-width:0}
+.name small{color:var(--sub);display:block;font-size:12px;margin-top:3px}
+.muted{color:var(--sub);font-size:13px}
+.muted a,.ih a,.kh a{color:var(--accent);font-weight:600}
+.warn{color:var(--red);font-weight:600}
+.ok{color:var(--green);font-weight:600}
+.tip{color:var(--blue);font-size:12px;margin-top:3px}
+.adv{color:var(--brown);font-size:12px;margin-top:3px;font-weight:600}
+.buy{color:var(--red);font-size:14px;font-weight:600}
+.price{color:var(--sub);font-weight:400}
+.bar{height:4px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:6px;background:#f7e6df;color:var(--brown);font-weight:700;margin-left:4px;vertical-align:middle}
+.tag.g{background:#eaf4ec;color:var(--green)}.tag.b{background:#e8f0fa;color:var(--blue)}.tag.y{background:#fff4e0;color:#b7791f}
+.loading{text-align:center;color:var(--sub);padding:24px}
+details{margin-top:8px}summary{color:var(--accent);font-weight:600}
+ol,ul{padding-left:20px;margin:6px 0}li{margin:4px 0}
+
+/* 몽글이 */
+.buddy{display:flex;align-items:flex-end;gap:6px;margin:6px 0 2px}
+.bchar{flex:none;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-4px)}}
+.bubble{flex:1;background:#fff;border-radius:16px 16px 16px 4px;padding:10px 12px;font-size:15px;line-height:1.45;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.bubble b{display:block;font-size:11px;color:var(--accent);margin-bottom:2px}
+.bubble .more{display:block;font-size:11px;color:var(--sub);margin-top:4px;text-align:right}
+.mini{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}
+
+/* 오늘 저녁 인원 */
+.who{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.who button{border:none;border-radius:12px;padding:8px 10px;font-size:14px;font-family:inherit;line-height:1.3;min-width:70px;min-height:48px}
+.who button small{display:block;font-size:11px;font-weight:700}
+.who .s0{background:#eaf4ec;color:var(--green)}.who .s1{background:#fff4e0;color:#b7791f}
+.who .s2{background:#e8f0fa;color:var(--blue)}.who .s3{background:#eee;color:#999}
+
+/* 계획 */
+.day{padding:10px 0;border-bottom:1px solid var(--line)}
+.day:last-child{border:none}
+.day.today{background:#fff6f1;margin:0 -14px;padding:10px 14px}
+.dh{font-weight:700;font-size:15px}
+.dh span{font-size:12px;color:var(--sub);font-weight:400;margin-left:4px}
+.ln{font-size:14px;margin-top:4px;line-height:1.4}
+.ln em{font-style:normal;color:var(--sub);display:inline-block;width:38px}
+
+/* 냉장고 */
+.hint{font-size:13px;color:var(--sub);margin:8px 2px 0}
+.fridge{display:grid;grid-template-columns:1fr 1fr;gap:5px;background:linear-gradient(#cfd5dc,#b6bdc6);border-radius:20px;padding:7px;margin-top:6px;box-shadow:0 8px 20px rgba(0,0,0,.13)}
+.side{position:relative;height:360px;border-radius:13px;perspective:900px}
+.inner{position:absolute;inset:0;border-radius:13px;background:linear-gradient(#f8fbff,#e6eef6);padding:8px 6px;overflow-y:auto;box-shadow:inset 0 0 14px rgba(0,0,0,.09)}
+#sideF .inner{background:linear-gradient(#eef6ff,#d6e6f6)}
+.ih{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#5b6773;margin:0 2px 4px}
+.shelfrow{display:flex;flex-wrap:wrap;gap:4px;padding:6px 2px;border-bottom:3px solid rgba(150,178,206,.45);min-height:48px;align-content:flex-start}
+.food{display:flex;flex-direction:column;align-items:flex-start;border:1px solid #dde3ea;background:#fff;border-radius:9px;padding:6px 15px 6px 8px;font-size:13px;color:var(--ink);position:relative;max-width:100%;text-align:left;font-family:inherit}
+.food small{color:var(--sub);font-size:10px}
+.food i{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%}
+.food.sel{border-color:var(--accent);background:#fff1eb;box-shadow:inset 0 0 0 1.5px var(--accent)}
+.door{position:absolute;inset:0;border:none;border-radius:13px;background:linear-gradient(135deg,#f5f7f9,#d6dbe1 60%,#e9ecef);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 2px 6px rgba(0,0,0,.12);transition:transform .7s cubic-bezier(.2,.8,.2,1);backface-visibility:hidden;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#4d5864;font-family:inherit}
+.door.left{transform-origin:left center}.door.right{transform-origin:right center}
+.side.open .door.left{transform:rotateY(-115deg)}.side.open .door.right{transform:rotateY(115deg)}
+.side.open .door{pointer-events:none}
+.handle{position:absolute;top:32%;width:6px;height:90px;border-radius:3px;background:linear-gradient(#aeb6bf,#8c959e)}
+.door.left .handle{right:10px}.door.right .handle{left:10px}
+.dl{font-size:17px;font-weight:700}
+.dc{font-size:12px;color:#6f7a85}
+.hot{background:var(--red);color:#fff;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700}
+.lower{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;align-items:start}
+.kimchi{background:linear-gradient(#e9ecef,#cdd3d9);border-radius:14px;padding:6px;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.kh{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#5b6773;padding:2px 4px}
+.drawer{display:block;width:100%;height:34px;margin-top:5px;border:none;border-radius:8px;background:linear-gradient(#f7f8f9,#dde2e6);position:relative;font-family:inherit;font-size:11px;color:#6f7a85}
+.drawer::after{content:"";position:absolute;left:32%;right:32%;bottom:6px;height:4px;border-radius:2px;background:#a9b1b9}
+.kin{display:none;background:#f1f6f2;border-radius:8px;margin-top:6px;padding:2px 4px;min-height:120px}
+.kimchi.open .kin{display:block}.kimchi.open .drawer{display:none}
+.kin .shelfrow{border-bottom:3px solid rgba(120,160,130,.3)}
+.pantry{background:linear-gradient(#ecdcc4,#dcc5a4);border-radius:14px;padding:6px;box-shadow:0 4px 12px rgba(0,0,0,.08);min-height:130px}
+.pl{font-size:12px;font-weight:700;color:#7a5c3a;padding:2px 4px}
+.pantry .shelfrow{border-bottom:3px solid rgba(122,92,58,.28)}
+.empty{font-size:12px;color:var(--sub);text-align:center;margin:18px 0}
+
+/* 가족 설정 */
+.famrow{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.famrow input[type=text]{margin:0;flex:1;min-width:80px;padding:10px}
+.famrow input.age{flex:none;width:64px}
+.famrow label{font-size:14px;display:flex;align-items:center;gap:4px}
+
+/* 전단지 */
+.fd{font-size:13px;font-weight:700;color:var(--accent);margin-top:10px}
+.fimgs{display:flex;gap:6px;overflow-x:auto;margin-top:8px}
+.fimgs img{height:120px;border-radius:8px;flex:none}
+
+/* 시트 */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;z-index:10}
+.sheet.on{display:flex}
+.sheetIn{background:#fff;width:100%;max-width:640px;margin:0 auto;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+
+/* 몽글이 대화 */
+.chat{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;z-index:12}
+.chat.on{display:flex}
+.chatHead{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:#fff;border-bottom:1px solid #eee}
+.chatHead b{flex:1;font-size:16px}
+.chatHead button{border:none;background:#f3efe9;border-radius:10px;padding:10px 14px;font-size:14px;font-family:inherit}
+.chatLog{flex:1;overflow-y:auto;padding:10px 12px}
+.msg{display:flex;gap:6px;margin:10px 0;align-items:flex-end}
+.msg .bb{max-width:80%;padding:10px 13px;font-size:15px;line-height:1.5;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.06);border-radius:16px 16px 16px 4px;white-space:pre-wrap}
+.msg.me{justify-content:flex-end}
+.msg.me .bb{background:var(--accent);color:#fff;border-radius:16px 16px 4px 16px}
+.quick{display:flex;gap:6px;flex-wrap:wrap;padding:4px 12px 8px}
+.quick button{border:1.5px solid var(--accent);color:var(--accent);background:#fff;border-radius:20px;padding:9px 14px;font-size:14px;font-family:inherit;min-height:42px}
+.chatBar{display:flex;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #eee;align-items:flex-end}
+.chatBar textarea{margin:0;flex:1;min-height:48px;max-height:120px;resize:none}
+.chatBar button{height:48px;min-width:48px;border:none;border-radius:12px;font-size:18px;font-family:inherit;background:#f3efe9}
+.chatBar .send{background:var(--accent);color:#fff;font-size:15px;font-weight:700;padding:0 14px}
+
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#2b2b2b;color:#fff;padding:11px 18px;border-radius:20px;font-size:14px;opacity:0;transition:.3s;pointer-events:none;z-index:20;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header><h1>오늘의 식사</h1><div class="date" id="date"></div></header>
+<main>
+
+<section id="home" class="on">
+  <div class="buddy" onclick="nextMsg()">
+    <div class="bchar" id="bchar"></div>
+    <div class="bubble"><b>몽글이</b><span id="bmsg"></span><span class="more" id="bmore"></span></div>
+  </div>
+  <div class="duo">
+    <button class="btn" id="regBtn">＋ 재료 등록하기</button>
+    <button class="btn light" id="chatBtn">💬 몽글이와 대화</button>
+  </div>
+
+  <div class="card">
+    <b>오늘 저녁 누가 먹어요?</b> <span class="muted">눌러서 바꿔요</span>
+    <div class="who" id="who"></div>
+    <div class="acts">
+      <button class="x" id="outBtn">🍜 외식/배달</button>
+      <button class="x" id="relaxBtn">⏰ 여유 있는 날</button>
+    </div>
+  </div>
+
+  <p class="hint">문이나 서랍을 눌러 열고, 재료를 눌러 고를 수 있어요.</p>
+  <div class="fridge">
+    <div class="side" id="sideF">
+      <div class="inner" id="inF"></div>
+      <button class="door left" onclick="toggleDoor('F')"><span class="dl">냉동실</span><span class="dc" id="dcF"></span><span id="hotF"></span><i class="handle"></i></button>
+    </div>
+    <div class="side" id="sideR">
+      <div class="inner" id="inR"></div>
+      <button class="door right" onclick="toggleDoor('R')"><span class="dl">냉장실</span><span class="dc" id="dcR"></span><span id="hotR"></span><i class="handle"></i></button>
+    </div>
+  </div>
+  <div class="lower">
+    <div class="kimchi" id="kimchi">
+      <div class="kh">김치냉장고 <span id="dcK"></span></div>
+      <button class="drawer" onclick="toggleKimchi()">열기</button>
+      <button class="drawer" onclick="toggleKimchi()"></button>
+      <button class="drawer" onclick="toggleKimchi()"></button>
+      <div class="kin" id="inK"></div>
+    </div>
+    <div class="pantry"><div class="pl">팬트리 · 실온</div><div id="inP"></div></div>
+  </div>
+
+  <div class="card">
+    <div id="selInfo" class="muted"></div>
+    <div class="row">
+      <input type="text" id="wish" placeholder="먹고 싶은 메뉴 (선택) 예: 된장찌개" enterkeyhint="search">
+      <button class="x" type="button" onclick="mic(this,'#wish')">🎤</button>
+    </div>
+    <button class="btn" id="recBtn">오늘 저녁 추천받기</button>
+  </div>
+  <div id="recOut"></div>
+
+  <div class="card">
+    <b>이번 주 계획</b>
+    <p class="muted">남은 재료를 기한 안에 다 쓰도록 아침과 저녁을 계획해요.</p>
+    <div id="planOut"></div>
+    <button class="btn light" id="planBtn">계획 짜기</button>
+  </div>
+
+  <div class="card">
+    <b>오늘 아침</b>
+    <p class="muted">먹은 아침을 누르면 재료가 빠져요.</p>
+    <div class="acts" id="bfBtns"></div>
+  </div>
+
+  <div id="homeAlerts"></div>
+</section>
+
+<section id="manage">
+  <div class="chips" id="chips"></div>
+  <div id="invList"></div>
+</section>
+
+<section id="shop">
+  <div class="card">
+    <b>이번 주 전단지</b>
+    <p class="muted">동네 마트 전단지를 올려주세요. 통째로 한 장보다 부분별로 잘라 여러 장 올리면 훨씬 잘 읽어요.</p>
+    <input type="file" id="flyerPhotos" accept="image/*" multiple>
+    <button class="btn" id="flyerBtn">전단지 읽기</button>
+    <div class="fimgs" id="flyerImgs"></div>
+    <div id="flyerOut"></div>
+  </div>
+  <div class="card">
+    <b>장보기 가이드</b>
+    <p class="muted">곧 떨어지거나 자주 사는 재료를 지난번 가격과 함께 보여드려요.</p>
+    <div id="lowList"></div>
+    <button class="btn" id="shopBtn">장보기 목록 만들어줘</button>
+    <div id="shopOut"></div>
+  </div>
+  <div class="card">
+    <b>장 본 거 올리기</b>
+    <p class="muted">영수증이나 주문내역 캡처를 올려주세요. 포장의 날짜 부분 사진을 같이 올리면 유통기한도 함께 읽어요.</p>
+    <input type="file" id="photos" accept="image/*" multiple>
+    <textarea id="memo" rows="2" placeholder="말이나 글로도 가능 (예: 사과 2kg 12,900원, 냉동만두 1kg)"></textarea>
+    <div class="row">
+      <button class="btn gray" type="button" onclick="mic(this,'#memo')">🎤 말로 하기</button>
+      <button class="btn" id="anaBtn">분석하기</button>
+    </div>
+  </div>
+  <div id="anaOut"></div>
+  <div class="card"><b>구매 이력</b><div id="buyList"></div></div>
+</section>
+
+<section id="log">
+  <div class="card">
+    <p class="muted">먹은 음식 사진을 올리거나 말이나 글로 알려주세요. 예: "애호박이랑 두부 넣고 된장찌개 해먹었어", "아이들이 만두 10개 먹었어", "사과 2개 썩어서 버렸어"</p>
+    <input type="file" id="eatPhotos" accept="image/*" multiple>
+    <textarea id="eatText" rows="3" placeholder="뭘 먹었는지, 또는 뭘 버렸는지 적거나 말해주세요"></textarea>
+    <div class="row">
+      <button class="btn gray" type="button" onclick="mic(this,'#eatText')">🎤 말로 하기</button>
+      <button class="btn" id="eatBtn">냉장고에서 빼기</button>
+    </div>
+  </div>
+  <div id="eatOut"></div>
+  <div class="card">
+    <b>영양 체크</b>
+    <p class="muted">최근 7일 기록을 보고 아이들과 어른에게 부족한 영양소, 다음에 먹으면 좋을 메뉴를 알려드려요.</p>
+    <button class="btn" id="nutBtn">이번 주 영양 체크</button>
+    <div id="nutOut"></div>
+  </div>
+  <div class="card"><b>버린 기록</b><div id="wasteList"></div></div>
+  <div class="card"><b>먹은 기록</b><div id="hist"></div></div>
+</section>
+
+<section id="set">
+  <div class="card">
+    <b>API 키</b>
+    <p class="muted">이 기기의 브라우저에만 저장되고 코드나 GitHub에는 올라가지 않아요.</p>
+    <input id="key" type="password" placeholder="sk-ant-..." autocomplete="off">
+    <button class="btn" id="keyBtn">저장</button>
+  </div>
+  <div class="card">
+    <b>우리 가족</b>
+    <p class="muted">다이어트에 체크한 사람은 저녁 기본값이 "다이어트"가 돼요.</p>
+    <div id="famEdit"></div>
+    <button class="btn gray" id="famAdd">＋ 가족 추가</button>
+    <button class="btn" id="famSave">저장</button>
+  </div>
+  <div class="card">
+    <b>우리집 식사 패턴</b>
+    <p class="muted">추천과 계획에 그대로 반영돼요. 자유롭게 고쳐 쓰세요.</p>
+    <textarea id="pattern" rows="9"></textarea>
+    <button class="btn" id="patSave">저장</button>
+  </div>
+  <div class="card">
+    <b>우리집 조리 도구와 보관 장소</b>
+    <textarea id="tools" rows="4"></textarea>
+    <button class="btn" id="toolSave">저장</button>
+  </div>
+  <div class="card">
+    <b>아침 세트</b>
+    <p class="muted">한 줄에 하나씩 "이름 | 준비 시간(분)"으로 적어요.</p>
+    <textarea id="bfEdit" rows="7"></textarea>
+    <button class="btn" id="bfSave">저장</button>
+  </div>
+  <div class="card">
+    <b>늘 있는 기본 재료</b>
+    <p class="muted">추천할 때 항상 있다고 보고 쓰는 재료예요.</p>
+    <textarea id="staples" rows="3"></textarea>
+    <button class="btn" id="stBtn">저장</button>
+  </div>
+  <div class="card">
+    <b>백업</b>
+    <p class="muted">데이터는 이 브라우저에만 있어요. 폰을 바꾸거나 다른 기기에서 쓰려면 백업 파일로 옮기세요.</p>
+    <button class="btn gray" id="expBtn">백업 파일 받기</button>
+    <input type="file" id="imp" accept=".json,application/json">
+  </div>
+</section>
+</main>
+
+<nav>
+  <button data-t="home" class="on"><span>🧊</span>냉장고</button>
+  <button data-t="manage"><span>📋</span>재료 관리</button>
+  <button data-t="shop"><span>🛒</span>장보기</button>
+  <button data-t="log"><span>🍽️</span>먹은 기록</button>
+  <button data-t="set"><span>⚙️</span>설정</button>
+</nav>
+
+<div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()">
+  <div class="sheetIn"><div id="sheetBody"></div><button class="btn gray" onclick="closeSheet()">닫기</button></div>
+</div>
+
+<div class="chat" id="chat">
+  <div class="chatHead"><div id="chatFace"></div><b>몽글이</b><button onclick="closeChat()">닫기</button></div>
+  <div class="chatLog" id="chatLog"></div>
+  <div class="quick" id="chatQuick"></div>
+  <div class="chatBar">
+    <button type="button" onclick="mic(this,'#chatInput')">🎤</button>
+    <textarea id="chatInput" rows="1" placeholder="몽글이에게 말하기" enterkeyhint="send"></textarea>
+    <button class="send" id="chatSend">보내기</button>
+  </div>
+</div>
+
+<input type="file" id="labelCam" accept="image/*" hidden>
+<div id="toast"></div>
+
+<script src="ai.js"></script>
+<script src="app.js"></script>
+<script src="app2.js"></script>
+</body>
+</html>
